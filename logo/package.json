@@ -1,0 +1,14 @@
+{
+  "name": "skill-mill-logo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Logo assets and generation script for the skill-mill organization.",
+  "scripts": {
+    "generate:logo": "node generate-logo.mjs",
+    "lint": "node --check generate-logo.mjs",
+    "check": "npm run lint && npm run generate:logo"
+  },
+  "dependencies": {
+    "opentype.js": "1.3.4"
+  }
+}
