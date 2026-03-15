@@ -1,10 +1,11 @@
 import opentype from "opentype.js";
+import sharp from "sharp";
 import { writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const fontPath = join(__dirname, "KaushanScript-Regular.ttf");
+const fontPath = join(__dirname, "Audiowide-Regular.ttf");
 const font = opentype.loadSync(fontPath);
 
 const text = "skill mill";
@@ -27,34 +28,54 @@ const height = side;
 
 const pathData = font.getPath(text, offsetX, offsetY, fontSize).toPathData(2);
 
-// White background, black text
-const svgLight = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <rect width="${width}" height="${height}" fill="#ffffff"/>
-  <path d="${pathData}" fill="#000000"/>
+// SVG variants
+const variants = [
+  {
+    name: "light",
+    desc: "white bg, black text",
+    bg: `<rect width="${width}" height="${height}" fill="#ffffff"/>`,
+    fill: "#000000",
+  },
+  {
+    name: "dark",
+    desc: "black bg, white text",
+    bg: `<rect width="${width}" height="${height}" fill="#000000"/>`,
+    fill: "#ffffff",
+  },
+  {
+    name: "black",
+    desc: "transparent bg, black text",
+    bg: "",
+    fill: "#000000",
+  },
+  {
+    name: "white",
+    desc: "transparent bg, white text",
+    bg: "",
+    fill: "#ffffff",
+  },
+];
+
+const pngScale = 4; // Render at higher resolution for crisp PNGs
+const pngSize = width * pngScale;
+
+for (const v of variants) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  ${v.bg}
+  <path d="${pathData}" fill="${v.fill}"/>
 </svg>`;
 
-// Black background, white text
-const svgDark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <rect width="${width}" height="${height}" fill="#000000"/>
-  <path d="${pathData}" fill="#ffffff"/>
-</svg>`;
+  const svgPath = join(__dirname, `skill-mill-${v.name}.svg`);
+  const pngPath = join(__dirname, `skill-mill-${v.name}.png`);
 
-// Transparent background versions too
-const svgBlack = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <path d="${pathData}" fill="#000000"/>
-</svg>`;
+  writeFileSync(svgPath, svg);
 
-const svgWhite = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <path d="${pathData}" fill="#ffffff"/>
-</svg>`;
+  await sharp(Buffer.from(svg))
+    .resize(pngSize, pngSize)
+    .png()
+    .toFile(pngPath);
 
-writeFileSync(join(__dirname, "skill-mill-light.svg"), svgLight);
-writeFileSync(join(__dirname, "skill-mill-dark.svg"), svgDark);
-writeFileSync(join(__dirname, "skill-mill-black.svg"), svgBlack);
-writeFileSync(join(__dirname, "skill-mill-white.svg"), svgWhite);
+  console.log(`  skill-mill-${v.name}.svg / .png  (${v.desc})`);
+}
 
-console.log(`Generated SVGs: ${width}x${height}px`);
-console.log("  skill-mill-light.svg  (white bg, black text)");
-console.log("  skill-mill-dark.svg   (black bg, white text)");
-console.log("  skill-mill-black.svg  (transparent bg, black text)");
-console.log("  skill-mill-white.svg  (transparent bg, white text)");
+console.log(`\nGenerated ${variants.length} SVGs + ${variants.length} PNGs (${width}x${height} svg, ${pngSize}x${pngSize} png)`);
